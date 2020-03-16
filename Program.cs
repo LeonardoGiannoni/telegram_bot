@@ -24,8 +24,8 @@ namespace telegram
             };
             var server_telegram  = new NancyHost(config, new Uri($"http://{server_hostname}:{port}"));
             server_telegram.Start();
-            Console.ReadKey();
             Console.WriteLine(String.Format($"Server started @ http://{server_hostname}:{port}"));
+            Console.ReadKey();
             return 0;
         }
     }
