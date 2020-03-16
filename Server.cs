@@ -6,7 +6,10 @@ using Telegram.Bot.Types;
 namespace telegram{
     public class Server: NancyModule{
         public Server(){
-            Get("/", _ => "ciao mondo!");
+            Get("/", _ => {
+                
+                return "ciao mondo!";
+            });
 
             Post("/", _ =>
             {
