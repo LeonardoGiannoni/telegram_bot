@@ -6,12 +6,13 @@
 //netsh http add urlacl url="http://+:12345/" user="Everyone"
 namespace telegram
 {
-    class Program
+    public static class Program
     {
+        public static TelegramBotClient bot;
         static int Main(string[] args)
         {
             //--client part
-            var bot = new TelegramBotClient(Secrets.telegram_secret);
+            bot = new TelegramBotClient(Secrets.telegram_secret);
             var telegram_client = bot.GetMeAsync().Result;
             Console.WriteLine($"Ciao sono l'utente {telegram_client.Id} e il mio nome è {telegram_client.FirstName}");
             

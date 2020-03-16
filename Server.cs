@@ -18,13 +18,11 @@ namespace telegram
             Post("/", _ =>
             {
                 var jsonString = this.Request.Body.AsString();
-                Message message = await botClient.SendTextMessageAsync(
-                channelId: Secrets.telegram_channel,
-                text: "Test message to a Bot telegram",
-                parseMode: ParseMode.Markdown,
-                disableNotification: true,
-                replyToMessageId: e.Message.MessageId
-                )
+                var t = Program.bot.SendTextMessageAsync(
+                    Secrets.telegram_channel,
+                    "Test message to a Bot telegram"
+                );
+                return null;
             });
         }
     }
