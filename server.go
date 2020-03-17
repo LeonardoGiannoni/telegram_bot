@@ -46,16 +46,16 @@ func createHandleDataFromPersistenceManager(srv *macaron.Macaron, b *tb.Bot) {
 		//s, _ := ctx.Req.Body().String()
 		/*j = parseJSON(s)*/
 		var jsonData JSONPost
-		json.Unmarshal([]byte(jp), &json_Data)
+		json.Unmarshal([]byte(jp), &jsonData)
 		if err != nil {
 			log.Println(err)
 			return ""
 		}
-		if json_Data.Value[1]>json_Data.Value[2]{
-			b.Send(chat, "Overflow alarm:\n\n"+json_Data.description+"at :"+json_Data.Time)
+		if jsonData.Value[1]>jsonData.Value[2]{
+			b.Send(chat, "Overflow alarm:\n\n"+jsonData.description+"at :"+jsonData.Time)
 		}
-		else if json_Data.Value[1]<json_Data.Value[0]{
-			b.Send(chat, "Underflow alarm:\n\n"+json_Data.description+"at :"+json_Data.Time)
+		else if jsonData.Value[1]<jsonData.Value[0]{
+			b.Send(chat, "Underflow alarm:\n\n"+jsonData.description+"at :"+jsonData.Time)
 		}
 			/*if j["value"][1] > j["value"][2] {
 			// over max
