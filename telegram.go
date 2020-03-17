@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	tb "gopkg.in/tucnak/telebot.v2"
@@ -13,8 +14,10 @@ func createBot() *tb.Bot {
 		//URL:   "http://195.129.111.17:8012",
 		Poller: &tb.LongPoller{Timeout: 10 * time.Second},
 	})
+
 	b.Handle("/hello", func(m *tb.Message) {
 		if m.FromChannel() {
+			b.Send(m.Chat, "/hello va fatto solo nei canali")
 			return
 		}
 		pipe := r.Pipeline()
@@ -33,6 +36,16 @@ func createBot() *tb.Bot {
 		fmt.Println("Chat: " + m.Chat.Recipient())
 		fmt.Println("User: " + m.Sender.Recipient())
 		b.Send(m.Chat, "test")
+	})
+
+	b.Handle("/identify", func(m *tb.Message) {
+		key := strings.TrimSpace(m.Text[9:])
+		p := "alarm_"
+		pipe := r.Pipeline()
+		pipe.SAdd(p+"chats", m.Chat.Recipient())
+		pipe.SAdd(p+key, m.Chat.Recipient())
+		pipe.Exec()
+		b.Send(m.Chat, "Registered!")
 	})
 
 	return b
