@@ -57,13 +57,6 @@ func createHandleDataFromPersistenceManager(srv *macaron.Macaron, b *tb.Bot) {
 		else if jsonData.Value[1]<jsonData.Value[0]{
 			b.Send(chat, "Underflow alarm:\n\n"+jsonData.description+"at :"+jsonData.Time)
 		}
-			/*if j["value"][1] > j["value"][2] {
-			// over max
-			for _, chat := range r.SMembers("alarm_" + string(j["key"])).Result() {
-				b.Send(chat, "Overflow alarm:\n\n"+j["description"])
-			}
-		}*/
-
-		return ""
+		return " "
 	})
 }
