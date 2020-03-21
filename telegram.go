@@ -8,6 +8,14 @@ import (
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
+func alarmTelegramUI(b *tb.Bot) {
+
+	b.Handle("/command", func(m *tb.Message) {
+		fmt.Println(m.Payload)
+	})
+
+}
+
 func createBot() *tb.Bot {
 	b, _ := tb.NewBot(tb.Settings{
 		Token: telegramSecret,
@@ -47,6 +55,8 @@ func createBot() *tb.Bot {
 		pipe.Exec()
 		b.Send(m.Chat, "Registered!")
 	})
+
+	alarmTelegramUI(b)
 
 	return b
 }

@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"strconv"
 
 	"github.com/go-macaron/binding"
 	"gopkg.in/macaron.v1"
@@ -11,11 +11,21 @@ import (
 )
 
 type JSONPost struct {
-	Key         string   `json:"key"`
-	Type        string   `json:"type"`
-	Time        string   `json:"time"`
-	Value       []string `json:"value"`
-	description string   `json:"description"`
+	Key         string `json:"key"`
+	Type        string `json:"type"`
+	Time        string `json:"time"`
+	ValueMin    string `json:"value_min"`
+	ValueMax    string `json:"value_max"`
+	ValueReal   string `json:"value_real"`
+	Description string `json:"description"`
+}
+
+type chatTarget struct {
+	payload string
+}
+
+func (c *chatTarget) Recipient() string {
+	return c.payload
 }
 
 func parseJSON(s string) map[string]interface{} {
@@ -41,22 +51,26 @@ func createHandleDataFromPersistenceManager(srv *macaron.Macaron, b *tb.Bot) {
 			"value": [min, actualValue, max]
 		}
 	*/
-	var j map[string]interface{}
-	srv.Post("/", binding.Json(Json_Post{}), func(jp JSONPost) string {
+	srv.Post("/", binding.Json(JSONPost{}), func(jp JSONPost) string {
 		//s, _ := ctx.Req.Body().String()
 		/*j = parseJSON(s)*/
-		var jsonData JSONPost
-		json.Unmarshal([]byte(jp), &jsonData)
-		if err != nil {
-			log.Println(err)
-			return ""
+		fmt.Println(jp.Description)
+		chatsToWriteTo := r.SMembers("alarm_" + jp.Key).Val()
+		msg := ""
+		if jp.ValueReal > jp.ValueMax {
+			msg = "Overflow alarm\n\n" + jp.Description + "\ntime: " + jp.Time
+		} else {
+			if jp.ValueReal < jp.ValueMin {
+				msg = "Underflow alarm\n\n" + jp.Description + "\ntime: " + jp.Time
+			}
 		}
-		if jsonData.Value[1]>jsonData.Value[2]{
-			b.Send(chat, "Overflow alarm:\n\n"+jsonData.description+"at :"+jsonData.Time)
+		for _, chat := range chatsToWriteTo {
+			var target tb.Chat
+			val, _ := strconv.ParseInt(chat, 10, 64)
+			target.ID = val
+			b.Send(&target, msg)
 		}
-		else if jsonData.Value[1]<jsonData.Value[0]{
-			b.Send(chat, "Underflow alarm:\n\n"+jsonData.description+"at :"+jsonData.Time)
-		}
-		return " "
+
+		return ""
 	})
 }
