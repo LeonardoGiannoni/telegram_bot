@@ -8,12 +8,47 @@ import (
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
-func alarmTelegramUI(b *tb.Bot) {
+mapAttribute := map[string]int32{           // Map of db attribute 
+    "air_temperature":  0,
+	"pressure": 1,
+	"humidity_perc": 2,
+	"earth_temperature": 3,
+	"brightness": 4,
 
+}
+
+func alarmTelegramUI(b *tb.Bot) {
+var ptr *JSONPost=&postObj
+(*ptr).
 	b.Handle("/command", func(m *tb.Message) {
 		fmt.Println(m.Payload)
+		res := strings.Split(m.Payload, " ")
+		for i := 0; i < len(res); i++ {
+			if res[i]!= nil{
+				if _, ok := mapAttribute[res[i]]; ok {
+					m.Payload=mapAttribute[res[i]]
+					starvariable:=i
+					break
+				}
+				else{
+					//comando non valido
+				}		
+			}
+		}
+		finish:=0
+		for y := starvariable; y < len(res); y++ {
+			if res[y]!= nil || finish==2{
+				if value, err := strconv.Itoa(strconv.Atoi(res[y])); err == nil {// conversione ad int per veificare se è un int 
+					finish++
+					if finish==1
+						var min string=value
+					if finish== 2
+						var max string=value															//nuova conversione per inserirla in un JSON
+				}
+			}
+		}
 	})
-
+	//estrapolo min max e l'attributo e posso fare una post anche dal Handle della funzione alarmTelegramUI
 }
 
 func createBot() *tb.Bot {

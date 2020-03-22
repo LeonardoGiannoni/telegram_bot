@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
+	"net/http"
 	"strconv"
 
 	"github.com/go-macaron/binding"
@@ -39,6 +42,19 @@ func createHandleServer(srv *macaron.Macaron) {
 	srv.Get("/", func(ctx *macaron.Context) string {
 		return "Working\n"
 	})
+}
+
+//SendDataToPersistenceManager sends json data to a persistence manager
+func SendDataToPersistenceManager(m *tb.Message) {
+
+	postObj := JSONPost{Key: m.Payload, Type: m.Payload, Time: "test", ValueMin: "t", ValueReal: "t", ValueMax: "r", Description: "w"}
+	requestBody, _ := json.Marshal(postObj)
+	resp, err := http.Post("URL_PYTHON:8080/test", "application/json", bytes.NewBuffer(requestBody)) //write real URL of pers_manager
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer resp.Body.Close()
+
 }
 
 func createHandleDataFromPersistenceManager(srv *macaron.Macaron, b *tb.Bot) {
