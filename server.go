@@ -13,7 +13,7 @@ import (
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
-type JSONPost struct {
+/*type JSONPost struct {
 	Key         string `json:"key"`
 	Type        string `json:"type"`
 	Time        string `json:"time"`
@@ -21,7 +21,7 @@ type JSONPost struct {
 	ValueMax    string `json:"value_max"`
 	ValueReal   string `json:"value_real"`
 	Description string `json:"description"`
-}
+}*/
 
 type chatTarget struct {
 	payload string
@@ -45,11 +45,10 @@ func createHandleServer(srv *macaron.Macaron) {
 }
 
 //SendDataToPersistenceManager sends json data to a persistence manager
-func SendDataToPersistenceManager(m *tb.Message) {
+func SendDataToPersistenceManager(jp JSONPost) {
 
-	postObj := JSONPost{Key: m.Payload, Type: m.Payload, Time: "test", ValueMin: "t", ValueReal: "t", ValueMax: "r", Description: "w"}
-	requestBody, _ := json.Marshal(postObj)
-	resp, err := http.Post("URL_PYTHON:8080/test", "application/json", bytes.NewBuffer(requestBody)) //write real URL of pers_manager
+	//requestBody, _ := json.Marshal(jp)
+	resp, err := http.Post("URL_PYTHON:8080/test", "application/json", bytes.NewBuffer(jp)) //write real URL of pers_manager
 	if err != nil {
 		log.Fatalln(err)
 	}

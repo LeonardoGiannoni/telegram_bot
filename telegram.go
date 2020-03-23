@@ -17,21 +17,30 @@ mapAttribute := map[string]int32{           // Map of db attribute
 
 }
 
+type JSONPost struct {
+	Key         string `json:"key"`
+	Type        string `json:"type"`
+	Time        string `json:"time"`
+	ValueMin    string `json:"value_min"`
+	ValueMax    string `json:"value_max"`
+	ValueReal   string `json:"value_real"`
+	Description string `json:"description"`
+}
+
 func alarmTelegramUI(b *tb.Bot) {
-var ptr *JSONPost=&postObj
-(*ptr).
+var jp JSONPost
 	b.Handle("/command", func(m *tb.Message) {
 		fmt.Println(m.Payload)
 		res := strings.Split(m.Payload, " ")
 		for i := 0; i < len(res); i++ {
 			if res[i]!= nil{
 				if _, ok := mapAttribute[res[i]]; ok {
-					m.Payload=mapAttribute[res[i]]
+					jp.Description=mapAttribute[res[i]]
 					starvariable:=i
 					break
 				}
 				else{
-					//comando non valido
+					b.Send(m.Chat,"error in some query")
 				}		
 			}
 		}
@@ -40,13 +49,14 @@ var ptr *JSONPost=&postObj
 			if res[y]!= nil || finish==2{
 				if value, err := strconv.Itoa(strconv.Atoi(res[y])); err == nil {// conversione ad int per veificare se è un int 
 					finish++
-					if finish==1
-						var min string=value
-					if finish== 2
-						var max string=value															//nuova conversione per inserirla in un JSON
+					if finish == 1
+						temp1:=value
+					if finish == 2
+						temp2:=value //nuova conversione per inserirla in un JSON
 				}
 			}
 		}
+		SendDataToPersistenceManager(jp)
 	})
 	//estrapolo min max e l'attributo e posso fare una post anche dal Handle della funzione alarmTelegramUI
 }
