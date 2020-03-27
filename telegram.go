@@ -2,21 +2,14 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
-mapAttribute := map[string]int32{           // Map of db attribute 
-    "air_temperature":  0,
-	"pressure": 1,
-	"humidity_perc": 2,
-	"earth_temperature": 3,
-	"brightness": 4,
-
-}
-
+//JSONPOST
 type JSONPost struct {
 	Key         string `json:"key"`
 	Type        string `json:"type"`
@@ -25,40 +18,94 @@ type JSONPost struct {
 	ValueMax    string `json:"value_max"`
 	ValueReal   string `json:"value_real"`
 	Description string `json:"description"`
+	Id_val 		string `json:"id_val"`
 }
 
 func alarmTelegramUI(b *tb.Bot) {
-var jp JSONPost
-	b.Handle("/command", func(m *tb.Message) {
+	var jp JSONPost
+	mapAttribute := map[string]int32{ // Map of db attribute
+		"air_temperature":   0,
+		"pressure":          1,
+		"humidity_perc":     2,
+		"earth_temperature": 3,
+		"brightness":        4,
+	}
+	b.Handle("/set", func(m *tb.Message) {
 		fmt.Println(m.Payload)
 		res := strings.Split(m.Payload, " ")
-		for i := 0; i < len(res); i++ {
-			if res[i]!= nil{
-				if _, ok := mapAttribute[res[i]]; ok {
-					jp.Description=mapAttribute[res[i]]
-					starvariable:=i
-					break
-				}
-				else{
-					b.Send(m.Chat,"error in some query")
-				}		
+		var temp [3]string
+		var y int = 0
+
+		for i := range res {
+			if res[i] != "" {
+				temp[y] = res[i]
+			} else {
+				b.Send(m.Chat, "error in some query")
 			}
 		}
-		finish:=0
-		for y := starvariable; y < len(res); y++ {
-			if res[y]!= nil || finish==2{
-				if value, err := strconv.Itoa(strconv.Atoi(res[y])); err == nil {// conversione ad int per veificare se è un int 
-					finish++
-					if finish == 1
-						temp1:=value
-					if finish == 2
-						temp2:=value //nuova conversione per inserirla in un JSON
+
+		if len(temp) == 3 {
+			if _, ok := mapAttribute[temp[0]]; ok {
+				jp.Description = temp[0]
+				for i := 1; i < len(temp); i++ {
+					if value, err := strconv.Itoa(strconv.Atoi(temp[i])); err == nil { // conversione ad int per veificare se è un int
+						if i == 2 {
+							if temp[1] < temp[2] {
+								jp.ValueMin = temp[1]
+								jp.ValueMax = temp[2]
+							} else {
+								jp.ValueMin = temp[2]
+								jp.ValueMax = temp[1]
+							}
+							SendDataToPersistenceManager(jp)
+						}
+					} else {
+						b.Send(m.Chat, "To much element in the query!")
+					}
 				}
+			} else {
+				b.Send(m.Chat, "This attribute doesn't extist")
 			}
+		} else {
+			b.Send(m.Chat, "Error in yhe query")
 		}
-		SendDataToPersistenceManager(jp)
 	})
-	//estrapolo min max e l'attributo e posso fare una post anche dal Handle della funzione alarmTelegramUI
+
+	b.Handle("/show", func(m *tb.Message) {
+		res := strings.Split(m.Payload, " ")
+		var temp string
+		var y int = 0
+
+		for i := range res {
+			if temp {
+			temp= res[i]
+			} else {
+				b.Send(m.Chat, "error in some query")
+			}
+		
+		}
+		jp.Id_val=temp
+		SendGetToPersistenceManager(temp)
+	} 
+})
+
+	b.Handle("/delete", func(m *tb.Message) {
+			fmt.Println(m.Payload)
+			res := strings.Split(m.Payload, " ")
+			var temp string
+			var y int = 0
+
+			for i := range res {
+				if temp {
+				temp= res[i]
+				} else {
+					b.Send(m.Chat, "error in some query")
+				}
+			
+			}
+			SendGetToPersistenceManager(temp)
+		} 
+	})
 }
 
 func createBot() *tb.Bot {

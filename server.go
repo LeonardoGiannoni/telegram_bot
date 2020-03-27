@@ -46,14 +46,28 @@ func createHandleServer(srv *macaron.Macaron) {
 
 //SendDataToPersistenceManager sends json data to a persistence manager
 func SendDataToPersistenceManager(jp JSONPost) {
-
 	//requestBody, _ := json.Marshal(jp)
 	resp, err := http.Post("URL_PYTHON:8080/test", "application/json", bytes.NewBuffer(jp)) //write real URL of pers_manager
 	if err != nil {
 		log.Fatalln(err)
 	}
 	defer resp.Body.Close()
+}
+//SendDataToPersistenceManager sends a param to show the value of the "id" allarm
+func SendGetToPersistenceManager(id string) {
+	
+	req, _ := http.NewRequest("GET", "URL_PYTHON:8080/id_param", "application/json", nil)
+	q := req.URL.Query()
+	q.Add("id_param", id)
+	req.URL.RawQuery = q.Encode()
+}
 
+func SendDeleteToPersistenceManager(id string) {
+	
+	req, _ := http.NewRequest("DELETE", "URL_PYTHON:8080/id_param", "application/json", nil)
+	q := req.URL.Query()
+	q.Add("id_param", id)
+	req.URL.RawQuery = q.Encode()
 }
 
 func createHandleDataFromPersistenceManager(srv *macaron.Macaron, b *tb.Bot) {
