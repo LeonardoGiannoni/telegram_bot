@@ -33,6 +33,9 @@ func alarmTelegramUI(b *tb.Bot) {
 	b.Handle("/set", func(m *tb.Message) {
 		fmt.Println(m.Payload)
 		res := strings.Split(m.Payload, " ")
+		for i := 0; i < len(res); i++ {
+			fmt.Println(res[i])
+		}
 		var temp [3]string
 		var y int = 0
 
@@ -43,12 +46,19 @@ func alarmTelegramUI(b *tb.Bot) {
 				b.Send(m.Chat, "error in some query")
 			}
 		}
-
+		
+		
 		if len(temp) == 3 {
-			if _, ok := mapAttribute[temp[0]]; ok {
+			fmt.Println("len uguale 3")
+			fmt.Println(temp[1],)
+			/*fmt.Println(temp[1])
+			fmt.Println(temp[2])*/
+
+			if _, ok := mapAttribute[temp[0]]; !ok {
+				b.Send(m.Chat, "Hello i'm in the if!")
 				jp.Description = temp[0]
-				for i := 1; i < len(temp); i++ {
-					if value, err := strconv.Itoa(strconv.Atoi(temp[i])); err == nil { // conversione ad int per veificare se è un int
+				for i := 1; i < len(temp)-1; i++ {//runnare il programma e vedere se da errori ancora 
+					if _, err := strconv.Atoi(temp[i]); err == nil { // conversione ad int per veificare se è un int
 						if i == 2 {
 							if temp[1] < temp[2] {
 								jp.ValueMin = temp[1]
@@ -58,6 +68,7 @@ func alarmTelegramUI(b *tb.Bot) {
 								jp.ValueMax = temp[1]
 							}
 							SendDataToPersistenceManager(jp)
+							b.Send(m.Chat, "json send")
 						}
 					} else {
 						b.Send(m.Chat, "To much element in the query!")
@@ -71,7 +82,7 @@ func alarmTelegramUI(b *tb.Bot) {
 		}
 	})
 
-	b.Handle("/show", func(m *tb.Message) {
+	/*b.Handle("/show", func(m *tb.Message) {
 		res := strings.Split(m.Payload, " ")
 		var temp string
 		var y int = 0
@@ -86,10 +97,9 @@ func alarmTelegramUI(b *tb.Bot) {
 		}
 		jp.Id_val=temp
 		SendGetToPersistenceManager(temp)
-	} 
-})
+	})*/
 
-	b.Handle("/delete", func(m *tb.Message) {
+	/*b.Handle("/delete", func(m *tb.Message) {
 			fmt.Println(m.Payload)
 			res := strings.Split(m.Payload, " ")
 			var temp string
@@ -105,12 +115,12 @@ func alarmTelegramUI(b *tb.Bot) {
 			}
 			SendGetToPersistenceManager(temp)
 		} 
-	})
+	})*/
 }
 
 func createBot() *tb.Bot {
 	b, _ := tb.NewBot(tb.Settings{
-		Token: telegramSecret,
+		Token: "944274536:AAGfuzoP3yKOungM3LIng47SI4ZyLZwBCow",
 		//URL:   "http://195.129.111.17:8012",
 		Poller: &tb.LongPoller{Timeout: 10 * time.Second},
 	})
