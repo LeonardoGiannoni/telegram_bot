@@ -44,10 +44,11 @@ func createHandleServer(srv *macaron.Macaron) {
 	})
 }
 
-//SendDataToPersistenceManager sends json data to a persistence manager
-func SendDataToPersistenceManager(jp JSONPost) {
+//SendPostToPersistenceManager sends json data to a persistence manager
+func SendPostToPersistenceManager(jp JSONPost) {
+	fmt.Println(jp.Description,jp.ValueMin,jp.ValueMax)
 	requestBody, _ := json.Marshal(jp)
-	resp, err := http.Post("0.0.0.0:8081", "application/json", bytes.NewBuffer(requestBody)) //write real URL of pers_manager
+	resp, err := http.Post("http://localhost:8081/testpost", "application/json", bytes.NewBuffer(requestBody)) //write real URL of pers_manager
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -55,7 +56,7 @@ func SendDataToPersistenceManager(jp JSONPost) {
 }
 //SendDataToPersistenceManager sends a param to show the value of the "id" allarm
 func SendGetToPersistenceManager(id string) {
-	req, err := http.NewRequest("GET", "0.0.0.0:8081", nil)
+	req, err := http.NewRequest("GET", "http://localhost:8081/testget", nil)
     if err != nil {
         log.Print(err)
         
@@ -64,10 +65,10 @@ func SendGetToPersistenceManager(id string) {
 	q.Add("id_param", id)
 	req.URL.RawQuery = q.Encode()
 }
-
+//SendDataToPersistenceManager sends a param to delete the allarm that has the same "id"
 func SendDeleteToPersistenceManager(id string) {
 	
-	req, err := http.NewRequest("GET", "0.0.0.0:8081", nil)
+	req, err := http.NewRequest("DELETE", "http://localhost:8081", nil)
 	if err != nil {
         log.Print(err)
         

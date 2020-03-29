@@ -33,89 +33,72 @@ func alarmTelegramUI(b *tb.Bot) {
 	b.Handle("/set", func(m *tb.Message) {
 		fmt.Println(m.Payload)
 		res := strings.Split(m.Payload, " ")
-		for i := 0; i < len(res); i++ {
-			fmt.Println(res[i])
-		}
-		var temp [3]string
-		var y int = 0
-
-		for i := range res {
-			if res[i] != "" {
-				temp[y] = res[i]
-			} else {
-				b.Send(m.Chat, "error in some query")
-			}
-		}
-		
-		
-		if len(temp) == 3 {
+		if len(res) == 3 {
 			fmt.Println("len uguale 3")
-			fmt.Println(temp[1],)
-			/*fmt.Println(temp[1])
-			fmt.Println(temp[2])*/
-
-			if _, ok := mapAttribute[temp[0]]; !ok {
-				b.Send(m.Chat, "Hello i'm in the if!")
-				jp.Description = temp[0]
-				for i := 1; i < len(temp)-1; i++ {//runnare il programma e vedere se da errori ancora 
-					if _, err := strconv.Atoi(temp[i]); err == nil { // conversione ad int per veificare se è un int
+			fmt.Println(res[1])
+			fmt.Println(res[2])
+			fmt.Println(res[0])
+			if _, ok := mapAttribute[res[0]]; ok {
+				jp.Description = res[0]
+				for i := 1; i < 3; i++ {//runnare il programma e vedere se da errori ancora 
+					if _, err := strconv.Atoi(res[i]); err == nil { // conversione ad int per veificare se è un int
 						if i == 2 {
-							if temp[1] < temp[2] {
-								jp.ValueMin = temp[1]
-								jp.ValueMax = temp[2]
+							if res[1] < res[2] {
+								jp.ValueMin = res[1]
+								jp.ValueMax = res[2]
 							} else {
-								jp.ValueMin = temp[2]
-								jp.ValueMax = temp[1]
+								jp.ValueMin = res[2]
+								jp.ValueMax = res[1]
 							}
-							SendDataToPersistenceManager(jp)
-							b.Send(m.Chat, "json send")
+							fmt.Println(jp.Description,jp.ValueMin,jp.ValueMax)
+							SendPostToPersistenceManager(jp)
+							b.Send(m.Chat, "New allarm set")
 						}
 					} else {
-						b.Send(m.Chat, "To much element in the query!")
+						b.Send(m.Chat, "Error: not a number in the query!")
 					}
 				}
 			} else {
-				b.Send(m.Chat, "This attribute doesn't extist")
+				b.Send(m.Chat, "Error: attribute missing!")
 			}
 		} else {
-			b.Send(m.Chat, "Error in yhe query")
+			b.Send(m.Chat, "Error in the query")
 		}
 	})
 
-	/*b.Handle("/show", func(m *tb.Message) {
+	b.Handle("/show", func(m *tb.Message) {
 		res := strings.Split(m.Payload, " ")
-		var temp string
-		var y int = 0
-
-		for i := range res {
-			if temp {
-			temp= res[i]
+		if len(res)==1{
+			if _, err := strconv.Atoi(res[0]); err == nil { // conversione ad int per veificare se è un int
+				SendGetToPersistenceManager(res[0])
+				fmt.Println("Valore inviato: ",res[0])
+				b.Send(m.Chat, "Query to /show sent")
 			} else {
-				b.Send(m.Chat, "error in some query")
+				b.Send(m.Chat, "Error: the id must be a number!")
 			}
-		
-		}
-		jp.Id_val=temp
-		SendGetToPersistenceManager(temp)
-	})*/
-
-	/*b.Handle("/delete", func(m *tb.Message) {
-			fmt.Println(m.Payload)
-			res := strings.Split(m.Payload, " ")
-			var temp string
-			var y int = 0
-
-			for i := range res {
-				if temp {
-				temp= res[i]
-				} else {
-					b.Send(m.Chat, "error in some query")
-				}
 			
+		}else{
+			b.Send(m.Chat, "Error in the query, please write only the allarm id")
+		}
+		
+	})
+
+	b.Handle("/delete", func(m *tb.Message) {
+		res := strings.Split(m.Payload, " ")
+		if len(res)==1{
+			if _, err := strconv.Atoi(res[0]); err == nil { // conversione ad int per veificare se è un int
+				SendGetToPersistenceManager(res[0])
+				fmt.Println("Valore inviato: ",res[0])
+				b.Send(m.Chat, "Query to /delete sent")
+			} else {
+				b.Send(m.Chat, "Error: the id must be a number!")
 			}
-			SendGetToPersistenceManager(temp)
-		} 
-	})*/
+			
+		}else{
+			b.Send(m.Chat, "Error in the query, please write only the allarm id")
+		}
+		
+	})
 }
 
 func createBot() *tb.Bot {
