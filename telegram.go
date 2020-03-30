@@ -31,18 +31,14 @@ func alarmTelegramUI(b *tb.Bot) {
 		"brightness":        4,
 	}
 	b.Handle("/set", func(m *tb.Message) {
-		fmt.Println(m.Payload)
-		res := strings.Split(m.Payload, " ")
-		if len(res) == 3 {
-			fmt.Println("len uguale 3")
-			fmt.Println(res[1])
-			fmt.Println(res[2])
-			fmt.Println(res[0])
+		res := strings.Split(m.Payload, " ") //slipt del payload del messagio di testo per eliminare gli spazi 
+		if len(res) == 3 {// verificare che la query abbia il numero esatto di argomenti ... "/set val_min val_max "
 			if _, ok := mapAttribute[res[0]]; ok {
-				jp.Description = res[0]
-				for i := 1; i < 3; i++ {//runnare il programma e vedere se da errori ancora 
-					if _, err := strconv.Atoi(res[i]); err == nil { // conversione ad int per veificare se è un int
+				jp.Description = res[0] //inserire nel JSON l'attributo su cui lavorare
+				for i := 1; i < 3; i++ {
+					if _, err := strconv.Atoi(res[i]); err == nil { // conversione ad int per veificare se è un numero 
 						if i == 2 {
+							//inserire nel JSON il valore minimo e massimo specificato dall'utente  
 							if res[1] < res[2] {
 								jp.ValueMin = res[1]
 								jp.ValueMax = res[2]
@@ -50,8 +46,7 @@ func alarmTelegramUI(b *tb.Bot) {
 								jp.ValueMin = res[2]
 								jp.ValueMax = res[1]
 							}
-							fmt.Println(jp.Description,jp.ValueMin,jp.ValueMax)
-							SendPostToPersistenceManager(jp)
+							SendPostToPersistenceManager(jp)//POST JSON al persistence manager
 							b.Send(m.Chat, "New allarm set")
 						}
 					} else {
@@ -68,11 +63,10 @@ func alarmTelegramUI(b *tb.Bot) {
 
 	b.Handle("/show", func(m *tb.Message) {
 		res := strings.Split(m.Payload, " ")
-		if len(res)==1{
-			if _, err := strconv.Atoi(res[0]); err == nil { // conversione ad int per veificare se è un int
-				SendGetToPersistenceManager(res[0])
-				fmt.Println("Valore inviato: ",res[0])
-				b.Send(m.Chat, "Query to /show sent")
+		if len(res)==1{// verificare che la query abbia il numero esatto di argomenti ... "/show id_allarmeDaMostrare "
+			if _, err := strconv.Atoi(res[0]); err == nil { // conversione ad int per veificare se è un numero
+				SendGetToPersistenceManager(res[0])//GET JSON al persistence manager che ritornerà i valori associati ad id_allarmeDaMostrare
+				b.Send(m.Chat, "Command show executed")
 			} else {
 				b.Send(m.Chat, "Error: the id must be a number!")
 			}
@@ -85,11 +79,11 @@ func alarmTelegramUI(b *tb.Bot) {
 
 	b.Handle("/delete", func(m *tb.Message) {
 		res := strings.Split(m.Payload, " ")
-		if len(res)==1{
-			if _, err := strconv.Atoi(res[0]); err == nil { // conversione ad int per veificare se è un int
-				SendGetToPersistenceManager(res[0])
-				fmt.Println("Valore inviato: ",res[0])
-				b.Send(m.Chat, "Query to /delete sent")
+		if len(res)==1{// verificare che la query abbia il numero esatto di argomenti ... "/show id_allarmeDaCancellare "
+			if _, err := strconv.Atoi(res[0]); err == nil { // conversione ad int per veificare se è un numero
+				SendDeleteToPersistenceManager(res[0])//HTTP DELETE al persistence manager 
+		
+				b.Send(m.Chat, "Command delete executed")
 			} else {
 				b.Send(m.Chat, "Error: the id must be a number!")
 			}

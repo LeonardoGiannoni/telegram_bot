@@ -56,7 +56,7 @@ func SendPostToPersistenceManager(jp JSONPost) {
 }
 //SendDataToPersistenceManager sends a param to show the value of the "id" allarm
 func SendGetToPersistenceManager(id string) {
-	req, err := http.NewRequest("GET", "http://localhost:8081/testget", nil)
+	req, err := http.NewRequest("GET", "http://localhost:8081/testget", nil)//write real URL of pers_manager
     if err != nil {
         log.Print(err)
         
@@ -68,7 +68,7 @@ func SendGetToPersistenceManager(id string) {
 //SendDataToPersistenceManager sends a param to delete the allarm that has the same "id"
 func SendDeleteToPersistenceManager(id string) {
 	
-	req, err := http.NewRequest("DELETE", "http://localhost:8081", nil)
+	req, err := http.NewRequest("DELETE", "http://localhost:8081", nil)//write real URL of pers_manager
 	if err != nil {
         log.Print(err)
         
@@ -89,8 +89,6 @@ func createHandleDataFromPersistenceManager(srv *macaron.Macaron, b *tb.Bot) {
 		}
 	*/
 	srv.Post("/", binding.Json(JSONPost{}), func(jp JSONPost) string {
-		//s, _ := ctx.Req.Body().String()
-		/*j = parseJSON(s)*/
 		fmt.Println(jp.Description)
 		chatsToWriteTo := r.SMembers("alarm_" + jp.Key).Val()
 		msg := ""
