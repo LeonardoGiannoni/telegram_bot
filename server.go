@@ -1,21 +1,34 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
+	"strconv"
 
 	"github.com/go-macaron/binding"
 	"gopkg.in/macaron.v1"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
-type JSONPost struct {
-	Key         string   `json:"key"`
-	Type        string   `json:"type"`
-	Time        string   `json:"time"`
-	Value       []string `json:"value"`
-	description string   `json:"description"`
+/*type JSONPost struct {
+	Key         string `json:"key"`
+	Type        string `json:"type"`
+	Time        string `json:"time"`
+	ValueMin    string `json:"value_min"`
+	ValueMax    string `json:"value_max"`
+	ValueReal   string `json:"value_real"`
+	Description string `json:"description"`
+}*/
+
+type chatTarget struct {
+	payload string
+}
+
+func (c *chatTarget) Recipient() string {
+	return c.payload
 }
 
 func parseJSON(s string) map[string]interface{} {
@@ -31,6 +44,40 @@ func createHandleServer(srv *macaron.Macaron) {
 	})
 }
 
+//SendPostToPersistenceManager sends json data to a persistence manager
+func SendPostToPersistenceManager(jp JSONPost) {
+	fmt.Println(jp.Description,jp.ValueMin,jp.ValueMax)
+	requestBody, _ := json.Marshal(jp)
+	resp, err := http.Post("http://localhost:8081/testpost", "application/json", bytes.NewBuffer(requestBody)) //write real URL of pers_manager
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer resp.Body.Close()
+}
+//SendDataToPersistenceManager sends a param to show the value of the "id" allarm
+func SendGetToPersistenceManager(id string) {
+	req, err := http.NewRequest("GET", "http://localhost:8081/testget", nil)//write real URL of pers_manager
+    if err != nil {
+        log.Print(err)
+        
+    }
+	q := req.URL.Query()
+	q.Add("id_param", id)
+	req.URL.RawQuery = q.Encode()
+}
+//SendDataToPersistenceManager sends a param to delete the allarm that has the same "id"
+func SendDeleteToPersistenceManager(id string) {
+	
+	req, err := http.NewRequest("DELETE", "http://localhost:8081", nil)//write real URL of pers_manager
+	if err != nil {
+        log.Print(err)
+        
+    }
+	q := req.URL.Query()
+	q.Add("id_param", id)
+	req.URL.RawQuery = q.Encode()
+}
+
 func createHandleDataFromPersistenceManager(srv *macaron.Macaron, b *tb.Bot) {
 	/*
 		{
@@ -41,22 +88,24 @@ func createHandleDataFromPersistenceManager(srv *macaron.Macaron, b *tb.Bot) {
 			"value": [min, actualValue, max]
 		}
 	*/
-	var j map[string]interface{}
-	srv.Post("/", binding.Json(Json_Post{}), func(jp JSONPost) string {
-		//s, _ := ctx.Req.Body().String()
-		/*j = parseJSON(s)*/
-		var jsonData JSONPost
-		json.Unmarshal([]byte(jp), &jsonData)
-		if err != nil {
-			log.Println(err)
-			return ""
+	srv.Post("/", binding.Json(JSONPost{}), func(jp JSONPost) string {
+		fmt.Println(jp.Description)
+		chatsToWriteTo := r.SMembers("alarm_" + jp.Key).Val()
+		msg := ""
+		if jp.ValueReal > jp.ValueMax {
+			msg = "Overflow alarm\n\n" + jp.Description + "\ntime: " + jp.Time
+		} else {
+			if jp.ValueReal < jp.ValueMin {
+				msg = "Underflow alarm\n\n" + jp.Description + "\ntime: " + jp.Time
+			}
 		}
-		if jsonData.Value[1]>jsonData.Value[2]{
-			b.Send(chat, "Overflow alarm:\n\n"+jsonData.description+"at :"+jsonData.Time)
+		for _, chat := range chatsToWriteTo {
+			var target tb.Chat
+			val, _ := strconv.ParseInt(chat, 10, 64)
+			target.ID = val
+			b.Send(&target, msg)
 		}
-		else if jsonData.Value[1]<jsonData.Value[0]{
-			b.Send(chat, "Underflow alarm:\n\n"+jsonData.description+"at :"+jsonData.Time)
-		}
-		return " "
+
+		return ""
 	})
 }
