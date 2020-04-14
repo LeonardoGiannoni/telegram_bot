@@ -12,7 +12,7 @@ const (
 )
 
 var r = redis.NewClient(&redis.Options{
-	Addr:         "127.0.0.1:6379",
+	Addr:         "172.28.38.64:6379",
 	Password:     "",
 	DB:           3,
 	PoolSize:     4,

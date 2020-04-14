@@ -5,24 +5,14 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	
 
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
-//JSONPOST
-type JSONPost struct {
-	Key         string `json:"key"`
-	Type        string `json:"type"`
-	Time        string `json:"time"`
-	ValueMin    string `json:"value_min"`
-	ValueMax    string `json:"value_max"`
-	ValueReal   string `json:"value_real"`
-	Description string `json:"description"`
-	Id_val 		string `json:"id_val"`
-}
-
 func alarmTelegramUI(b *tb.Bot) {
 	var jp JSONPost
+	var done bool
 	mapAttribute := map[string]int32{ // Map of db attribute
 		"air_temperature":   0,
 		"pressure":          1,
@@ -31,54 +21,125 @@ func alarmTelegramUI(b *tb.Bot) {
 		"brightness":        4,
 	}
 	b.Handle("/set", func(m *tb.Message) {
-		res := strings.Split(m.Payload, " ") //slipt del payload del messagio di testo per eliminare gli spazi 
-		if len(res) == 3 {// verificare che la query abbia il numero esatto di argomenti ... "/set val_min val_max "
-			if _, ok := mapAttribute[res[0]]; ok {
-				jp.Description = res[0] //inserire nel JSON l'attributo su cui lavorare
-				for i := 1; i < 3; i++ {
-					if _, err := strconv.Atoi(res[i]); err == nil { // conversione ad int per veificare se è un numero 
-						if i == 2 {
-							//inserire nel JSON il valore minimo e massimo specificato dall'utente  
-							if res[1] < res[2] {
-								jp.ValueMin = res[1]
-								jp.ValueMax = res[2]
-							} else {
-								jp.ValueMin = res[2]
-								jp.ValueMax = res[1]
-							}
-							SendPostToPersistenceManager(jp)//POST JSON al persistence manager
-							b.Send(m.Chat, "New allarm set")
-						}
+		logged := r.SIsMember("alarm_chats", m.Chat.Recipient()).Val()
+		if (!logged){
+			b.Send(m.Chat,"You aren't logged!")
+			return
+		}
+		resTemp := strings.Split(m.Payload, " ") //slipt del payload del messagio di testo per eliminare gli spazi 
+		var res []string
+		for _, str := range resTemp {
+			if str != ""{
+				res=append(res,str)
+			}
+		}
+		if (len(res)!=3){
+			b.Send(m.Chat, "Error in the query")
+			return
+		}
+		if _, ok := mapAttribute[res[0]]; !ok {
+				b.Send(m.Chat, "Error in the query")
+				return
+		}
+		jp.Description = res[0]
+		for i:=1; i<3; i++{
+			if _, err:=strconv.Atoi(res[i]);err==nil{
+				if (i==2){
+					intRes1,_:=strconv.Atoi(res[1])
+					intRes2,_:=strconv.Atoi(res[2])
+					if intRes1 < intRes2 {
+						jp.ValueMin = res[1]
+						jp.ValueMax = res[2]
 					} else {
-						b.Send(m.Chat, "Error: not a number in the query!")
+						jp.ValueMin = res[2]
+						jp.ValueMax = res[1]
+					}
+					done=SendPostToPersistenceManager(jp)//POST JSON al persistence manager
+					if (done){
+						b.Send(m.Chat, "New allarm set")
+					}else{
+						b.Send(m.Chat, "Error in the request:JSON not send")
 					}
 				}
-			} else {
-				b.Send(m.Chat, "Error: attribute missing!")
 			}
-		} else {
-			b.Send(m.Chat, "Error in the query")
 		}
 	})
 
 	b.Handle("/show", func(m *tb.Message) {
-		res := strings.Split(m.Payload, " ")
-		if len(res)==1{// verificare che la query abbia il numero esatto di argomenti ... "/show id_allarmeDaMostrare "
-			if _, err := strconv.Atoi(res[0]); err == nil { // conversione ad int per veificare se è un numero
-				SendGetToPersistenceManager(res[0])//GET JSON al persistence manager che ritornerà i valori associati ad id_allarmeDaMostrare
-				b.Send(m.Chat, "Command show executed")
-			} else {
-				b.Send(m.Chat, "Error: the id must be a number!")
-			}
-			
-		}else{
-			b.Send(m.Chat, "Error in the query, please write only the allarm id")
+		logged := r.SIsMember("alarm_chats", m.Chat.Recipient()).Val()
+		if (!logged){
+			b.Send(m.Chat,"You aren't logged!")
+			return
 		}
-		
+		resTemp := strings.Split(m.Payload, " ")
+		var res []string
+		for _, str := range resTemp {
+			if str != ""{
+				res=append(res,str)
+			}
+		}
+		fmt.Println(len(res))
+		if (len(res)==0){// gestione caso /show... policy:get all alarms in DB
+			jp,err :=SendGetALLToPersistenceManager()
+			if (err!=nil){
+				b.Send(m.Chat,"Err!=nill")
+				return
+			}
+			var stringResult strings.Builder
+			for _, value := range jp {
+				stringResult.WriteString("ID_alarm: ")
+				stringResult.WriteString(value.ID)   
+				stringResult.WriteString("\nDescription")
+				stringResult.WriteString(value.Description)
+				stringResult.WriteString(" \nValueMin: ")
+				stringResult.WriteString(value.ValueMin)
+				stringResult.WriteString(" ValueMax: ")
+				stringResult.WriteString( value.ValueMax)
+				stringResult.WriteString("\n\n")
+			}
+			b.Send(m.Chat,stringResult)
+			fmt.Println(stringResult)
+			if (err!= nil){
+				fmt.Println(err)
+			}
+			return
+		}
+		if (len(res)!=1){// verificare che la query abbia il numero esatto di argomenti ... "/show id_allarmeDaMostrare "
+			b.Send(m.Chat, "Error in the query")
+			return
+		}
+		if _, err := strconv.Atoi(res[0]); err == nil { // conversione ad int per veificare se è un numero
+			jp, err2 :=SendGetToPersistenceManager(res[0])//GET al persistence manager che ritornerà i valori associati ad id_allarmeDaMostrare
+			if (err2 != nil){
+				b.Send(m.Chat,"ID doesn't exist")
+				return
+			}
+			b.Send(m.Chat, "ID_alarm: " + jp.ID +" Description: \n " + jp.Description +"ValueMin: " + jp.ValueMin +" ValueMax: "+ jp.ValueMax )
+		} else {
+			b.Send(m.Chat, "Error: the id must be a number!")
+		}
 	})
 
 	b.Handle("/delete", func(m *tb.Message) {
-		res := strings.Split(m.Payload, " ")
+		logged := r.SIsMember("alarm_chats", m.Chat.Recipient()).Val()//verifica che l'id scritto nella chat dall'utente sia registrato su Redis 
+		if (!logged){
+			b.Send(m.Chat,"You aren't logged!")
+			return
+		}
+		resTemp := strings.Split(m.Payload, " ") //slipt del payload del messagio di testo per eliminare gli spazi 
+		var res []string
+		for _, str := range resTemp {
+			if str != ""{
+				res=append(res,str)
+			}
+		}
+		
+		if (len(res)!=1){
+			b.Send(m.Chat, "Error in the query, please write only the allarm id")
+		}
+		
+		
+		
 		if len(res)==1{// verificare che la query abbia il numero esatto di argomenti ... "/show id_allarmeDaCancellare "
 			if _, err := strconv.Atoi(res[0]); err == nil { // conversione ad int per veificare se è un numero
 				SendDeleteToPersistenceManager(res[0])//HTTP DELETE al persistence manager 
@@ -91,7 +152,6 @@ func alarmTelegramUI(b *tb.Bot) {
 		}else{
 			b.Send(m.Chat, "Error in the query, please write only the allarm id")
 		}
-		
 	})
 }
 
@@ -129,7 +189,7 @@ func createBot() *tb.Bot {
 		key := strings.TrimSpace(m.Text[9:])
 		p := "alarm_"
 		pipe := r.Pipeline()
-		pipe.SAdd(p+"chats", m.Chat.Recipient())
+		pipe.SAdd(p+"chats", m.Chat.Recipient())// r.Sismember(alarm_chats, m.Chat.Recipient());
 		pipe.SAdd(p+key, m.Chat.Recipient())
 		pipe.Exec()
 		b.Send(m.Chat, "Registered!")
