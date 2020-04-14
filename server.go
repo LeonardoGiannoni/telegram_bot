@@ -9,19 +9,37 @@ import (
 	"strconv"
 
 	"github.com/go-macaron/binding"
+	"io/ioutil"
 	"gopkg.in/macaron.v1"
 	tb "gopkg.in/tucnak/telebot.v2"
+	"strings"
+	"errors"
 )
 
-/*type JSONPost struct {
-	Key         string `json:"key"`
-	Type        string `json:"type"`
+type JSONAll []struct {
+	Description string `json:"description"`
+	ID			string `json:"id"`
 	Time        string `json:"time"`
 	ValueMin    string `json:"value_min"`
 	ValueMax    string `json:"value_max"`
 	ValueReal   string `json:"value_real"`
+	Key         string `json:"key"`
+}
+
+
+
+type JSONPost struct {
 	Description string `json:"description"`
-}*/
+	ID			string `json:"id"`
+	Time        string `json:"time"`
+	ValueMin    string `json:"value_min"`
+	ValueMax    string `json:"value_max"`
+	ValueReal   string `json:"value_real"`
+	Key         string `json:"key"`
+}
+
+var jg JSONPost
+var jAll JSONAll
 
 type chatTarget struct {
 	payload string
@@ -45,37 +63,87 @@ func createHandleServer(srv *macaron.Macaron) {
 }
 
 //SendPostToPersistenceManager sends json data to a persistence manager
-func SendPostToPersistenceManager(jp JSONPost) {
+func SendPostToPersistenceManager(jp JSONPost) bool {
 	fmt.Println(jp.Description,jp.ValueMin,jp.ValueMax)
 	requestBody, _ := json.Marshal(jp)
-	resp, err := http.Post("http://localhost:8081/testpost", "application/json", bytes.NewBuffer(requestBody)) //write real URL of pers_manager
+	resp, err := http.Post("http://172.28.157.234:8000/alarm", "application/json", bytes.NewBuffer(requestBody)) //write real URL of pers_manager
 	if err != nil {
 		log.Fatalln(err)
 	}
-	defer resp.Body.Close()
+	if resp.StatusCode == 201{
+		return true
+	}else{
+		return false
+	}
 }
-//SendDataToPersistenceManager sends a param to show the value of the "id" allarm
-func SendGetToPersistenceManager(id string) {
-	req, err := http.NewRequest("GET", "http://localhost:8081/testget", nil)//write real URL of pers_manager
-    if err != nil {
-        log.Print(err)
-        
-    }
-	q := req.URL.Query()
-	q.Add("id_param", id)
-	req.URL.RawQuery = q.Encode()
-}
-//SendDataToPersistenceManager sends a param to delete the allarm that has the same "id"
-func SendDeleteToPersistenceManager(id string) {
-	
-	req, err := http.NewRequest("DELETE", "http://localhost:8081", nil)//write real URL of pers_manager
+//"SendDataToPersistenceManager" sends a param to show the value of the "id" allarm
+func SendGetToPersistenceManager(id string) (JSONPost, error)  {
+	var url strings.Builder
+	var jNull JSONPost
+	url.WriteString("http://172.28.157.234:8000/alarm?id=")
+	url.WriteString(id)
+	resp, err:= http.Get(url.String())
 	if err != nil {
-        log.Print(err)
-        
-    }
-	q := req.URL.Query()
-	q.Add("id_param", id)
-	req.URL.RawQuery = q.Encode()
+		log.Fatalln(err)
+	}
+	if resp.StatusCode == 200{
+		bodyBytes, _:=ioutil.ReadAll(resp.Body)
+		
+		err2 := json.Unmarshal(bodyBytes, &jg)
+		if err2!= nil{
+			fmt.Println(err)
+		}
+		return jg,nil
+
+	}else if resp.StatusCode==404{
+		return jNull,errors.New("")
+	}
+	return jNull,errors.New("")
+}
+
+func SendGetALLToPersistenceManager() ( JSONAll, error)  {
+	var url strings.Builder
+	var jNull JSONAll
+	url.WriteString("http://172.28.157.234:8000/alarm")
+	resp, err:= http.Get(url.String())
+	if err != nil {
+		log.Fatalln(err)
+	}
+	if resp.StatusCode == 200{
+		bodyBytes, _:=ioutil.ReadAll(resp.Body)
+		err2 := json.Unmarshal(bodyBytes, &jAll)
+		if err2!= nil{
+			fmt.Println(err)
+		}
+		fmt.Println("Json ritornato")
+		return jAll,nil
+
+	}else if resp.StatusCode==404{
+		return jNull,errors.New("")
+	}
+	return jNull,errors.New("")
+}
+
+//"SendDataToPersistenceManager" sends a param to delete the allarm that has the same "id"
+func SendDeleteToPersistenceManager(id string) bool {
+	client := &http.Client{}
+	/*create a url*/
+	var url strings.Builder
+	url.WriteString("http://172.28.157.234:8000/alarm?id=")
+	url.WriteString(id)
+	/**************/
+	/*create a request set as a HTTP DELETE*/
+	req, err := http.NewRequest("DELETE",url.String(),nil)
+	resp, err:=client.Do(req)
+	/*************/
+	if err!=nil{
+		log.Fatalln(err)
+	}
+	if resp.StatusCode ==200{
+		return true
+	}else {
+		return false
+	}
 }
 
 func createHandleDataFromPersistenceManager(srv *macaron.Macaron, b *tb.Bot) {
@@ -105,7 +173,7 @@ func createHandleDataFromPersistenceManager(srv *macaron.Macaron, b *tb.Bot) {
 			target.ID = val
 			b.Send(&target, msg)
 		}
-
+		
 		return ""
 	})
 }
