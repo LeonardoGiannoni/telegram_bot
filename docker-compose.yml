@@ -1,0 +1,15 @@
+version: "3.1"
+services:
+  telegram_bot:
+    container_name: labprog_telegram_bot
+    build: .
+    ports:
+      - 0.0.0.0:8081:8081
+    depends_on:
+      - labprog_redis
+
+  labprog_redis:
+    container_name: labprog_redis
+    image: redis
+
+
